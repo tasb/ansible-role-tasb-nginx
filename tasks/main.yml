@@ -1,0 +1,48 @@
+---
+- name: Install Nginx
+  ansible.builtin.yum:
+    name: nginx
+    state: present
+  when:
+    - ansible_os_family == 'RedHat'
+
+- name: Install Nginx
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+  when:
+    - ansible_os_family == 'Debian'
+
+- name: Ensure Nginx is running
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: yes
+
+- name: Copy new initial page
+  ansible.builtin.copy:
+    src: "{{ initial_page_path }}"
+    dest: /usr/share/nginx/html/index.html
+  notify: Reload Nginx
+
+- meta: flush_handlers
+
+- name: Smoke test
+  ansible.builtin.uri:
+    url: http://{{ ansible_hostname }}
+    status_code: 200
+    timeout: 5
+    return_content: yes
+  register: result
+  until: result.status == 200
+  retries: 5
+  delay: 10
+
+- name: Print the result
+  ansible.builtin.debug:
+    var: result
+
+
+
+
+
